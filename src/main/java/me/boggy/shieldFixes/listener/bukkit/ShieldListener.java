@@ -31,37 +31,25 @@ public class ShieldListener implements Listener {
     @EventHandler
     public void onPlayerInteract(PlayerInteractEvent e) {
         ItemStack is = e.getItem();
-
-        if (is == null) {
-            return;
-        }
-
-        if (is.getType() != Material.SHIELD || (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK)) {
-            return;
-        }
-
-        if (e.getPlayer().hasCooldown(Material.SHIELD)) {
-            return;
-        }
+        if (is == null || is.getType() != Material.SHIELD) return;
+        if (e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        if (e.getPlayer().hasCooldown(Material.SHIELD)) return;
 
         Player player = e.getPlayer();
-
-        // Player is blocking
 
         plugin.getBlockingPlayers().add(player.getEntityId());
 
         List<Player> nearbyPlayers = new ArrayList<>();
-
         for (Entity entity : player.getNearbyEntities(40, 40, 40)) {
-            if (entity instanceof Player) {
-                nearbyPlayers.add((Player) entity);
+            if (entity instanceof Player p) {
+                nearbyPlayers.add(p);
             }
         }
 
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (player.getInventory().getItemInMainHand().getType() != Material.SHIELD || player.hasCooldown(Material.SHIELD)) {
-                return;
-            }
+            if (!player.isOnline()) return;
+            if (player.getInventory().getItemInMainHand().getType() != Material.SHIELD) return;
+            if (player.hasCooldown(Material.SHIELD)) return;
 
             EntityData entityData = new EntityData(8, EntityDataTypes.BYTE, (byte) 0x01);
             WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(player.getEntityId(), List.of(entityData));
@@ -72,29 +60,21 @@ public class ShieldListener implements Listener {
 
             plugin.getBlockingPlayers().removeIf(id -> id == player.getEntityId());
 
-        }, 2L); // 2 ticks is the fastest you can send the packet
-
+        }, 2L);
     }
 
     @EventHandler
     public void onPlayerDamage(EntityDamageByEntityEvent e) {
-        if (!(e.getDamager() instanceof Player damager)) {
-            return;
-        }
+        if (!(e.getDamager() instanceof Player damager)) return;
+        if (!(e.getEntity() instanceof Player victim)) return;
+        if (!victim.isBlocking()) return;
 
-        if (!(e.getEntity() instanceof Player victim)) {
-            return;
-        }
+        Material mainHandType = damager.getInventory().getItemInMainHand().getType();
+        if (!mainHandType.toString().endsWith("_AXE")) return;
 
-        if (!victim.isBlocking() || !damager.getInventory().getItemInMainHand().getType().toString().endsWith("_AXE")) {
-            return;
-        }
+        if (e.getFinalDamage() > 0) return;
 
-        if (e.getFinalDamage() > 0) {
-            return;
-        }
-
-        damager.playSound(victim.getLocation(), Sound.ITEM_SHIELD_BREAK, 1, 1);
+        damager.playSound(victim.getLocation(), Sound.ITEM_SHIELD_BREAK, 1f, 1f);
     }
 
 }
