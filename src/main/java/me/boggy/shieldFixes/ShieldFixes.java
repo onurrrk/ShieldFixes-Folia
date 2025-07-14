@@ -8,10 +8,12 @@ import me.boggy.shieldFixes.listener.packet.ShieldUnblockListener;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.LinkedList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public final class ShieldFixes extends JavaPlugin {
-    private LinkedList<Integer> blockingPlayers = new LinkedList<>();
+
+    private final Queue<Integer> blockingPlayers = new ConcurrentLinkedQueue<>();
 
     @Override
     public void onLoad() {
@@ -30,5 +32,7 @@ public final class ShieldFixes extends JavaPlugin {
         PacketEvents.getAPI().terminate();
     }
 
-    public LinkedList<Integer> getBlockingPlayers() { return blockingPlayers; }
+    public Queue<Integer> getBlockingPlayers() {
+        return blockingPlayers;
+    }
 }
