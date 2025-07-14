@@ -2,6 +2,7 @@ name: ShieldFixes
 version: '1.0'
 main: me.boggy.shieldFixes.ShieldFixes
 api-version: '1.19'
+folia-supported: true
 author: boggymc
 
 depend:
