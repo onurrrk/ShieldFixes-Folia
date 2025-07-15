@@ -5,7 +5,6 @@ import com.github.retrooper.packetevents.protocol.entity.data.EntityData;
 import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import me.boggy.shieldFixes.ShieldFixes;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
@@ -36,7 +35,6 @@ public class ShieldListener implements Listener {
         if (e.getPlayer().hasCooldown(Material.SHIELD)) return;
 
         Player player = e.getPlayer();
-
         plugin.getBlockingPlayers().add(player.getEntityId());
 
         List<Player> nearbyPlayers = new ArrayList<>();
@@ -46,7 +44,7 @@ public class ShieldListener implements Listener {
             }
         }
 
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        player.getScheduler().runDelayed(plugin, scheduledTask -> {
             if (!player.isOnline()) return;
             if (player.getInventory().getItemInMainHand().getType() != Material.SHIELD) return;
             if (player.hasCooldown(Material.SHIELD)) return;
@@ -59,7 +57,6 @@ public class ShieldListener implements Listener {
             }
 
             plugin.getBlockingPlayers().removeIf(id -> id == player.getEntityId());
-
         }, 2L);
     }
 
@@ -71,10 +68,8 @@ public class ShieldListener implements Listener {
 
         Material mainHandType = damager.getInventory().getItemInMainHand().getType();
         if (!mainHandType.toString().endsWith("_AXE")) return;
-
         if (e.getFinalDamage() > 0) return;
 
         damager.playSound(victim.getLocation(), Sound.ITEM_SHIELD_BREAK, 1f, 1f);
     }
-
 }
