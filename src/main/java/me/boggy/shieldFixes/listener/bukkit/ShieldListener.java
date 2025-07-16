@@ -18,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ShieldListener implements Listener {
 
@@ -35,6 +36,7 @@ public class ShieldListener implements Listener {
         if (e.getPlayer().hasCooldown(Material.SHIELD)) return;
 
         Player player = e.getPlayer();
+
         plugin.getBlockingPlayers().add(player.getEntityId());
 
         List<Player> nearbyPlayers = new ArrayList<>();
@@ -44,20 +46,32 @@ public class ShieldListener implements Listener {
             }
         }
 
-        player.getScheduler().runDelayed(plugin, scheduledTask -> {
+        player.getScheduler().runDelayed(plugin, (task) -> {
             if (!player.isOnline()) return;
-            if (player.getInventory().getItemInMainHand().getType() != Material.SHIELD) return;
-            if (player.hasCooldown(Material.SHIELD)) return;
+
+            if (player.getInventory().getItemInMainHand().getType() != Material.SHIELD) {
+                plugin.getBlockingPlayers().remove(player.getEntityId());
+                return;
+            }
+            if (player.hasCooldown(Material.SHIELD)) {
+                plugin.getBlockingPlayers().remove(player.getEntityId());
+                return;
+            }
 
             EntityData entityData = new EntityData(8, EntityDataTypes.BYTE, (byte) 0x01);
             WrapperPlayServerEntityMetadata packet = new WrapperPlayServerEntityMetadata(player.getEntityId(), List.of(entityData));
 
             if (plugin.getBlockingPlayers().contains(player.getEntityId())) {
-                nearbyPlayers.forEach(p -> PacketEvents.getAPI().getPlayerManager().sendPacket(p, packet));
+                nearbyPlayers.forEach(p -> {
+                    if (p.isOnline()) {
+                        PacketEvents.getAPI().getPlayerManager().sendPacket(p, packet);
+                    }
+                });
             }
 
-            plugin.getBlockingPlayers().removeIf(id -> id == player.getEntityId());
-        }, 2L);
+            plugin.getBlockingPlayers().remove(player.getEntityId());
+
+        }, null, 2L);
     }
 
     @EventHandler
@@ -68,6 +82,7 @@ public class ShieldListener implements Listener {
 
         Material mainHandType = damager.getInventory().getItemInMainHand().getType();
         if (!mainHandType.toString().endsWith("_AXE")) return;
+
         if (e.getFinalDamage() > 0) return;
 
         damager.playSound(victim.getLocation(), Sound.ITEM_SHIELD_BREAK, 1f, 1f);
